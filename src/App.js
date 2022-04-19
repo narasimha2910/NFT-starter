@@ -1,12 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Web3 from "web3";
 import testAbi from "./testAbi";
 
 function App() {
-  const web3 = new Web3(window.ethereum);
-
   const [address, setAddress] = useState("");
-  const [metaData, setMetaData] = useState({});
+  const [metaData, setMetaData] = useState([]);
 
   async function load() {
     const web3 = new Web3(Web3.givenProvider);
@@ -26,15 +24,12 @@ function App() {
     const spacePunksBalance = await contract.methods
       .balanceOf("0x80efF130ddE6223a10e6ab27e35ee9456b635cCD")
       .call();
-    console.log();
     const metaArray = [];
     for (let i = 0; i < spacePunksBalance; i++) {
       const tokenId = await contract.methods
         .tokenOfOwnerByIndex("0x80efF130ddE6223a10e6ab27e35ee9456b635cCD", i)
         .call();
       let tokenMetadataURI = await contract.methods.tokenURI(tokenId).call();
-
-      
 
       if (tokenMetadataURI.startsWith("ipfs://")) {
         tokenMetadataURI = `https://ipfs.io/ipfs/${
@@ -43,33 +38,53 @@ function App() {
       }
 
       console.log(tokenMetadataURI);
-      const tokenMetadata = await fetch(tokenMetadataURI).then((response) =>
-        response.json()
-      ).then((data) => data);
-      setMetaData(tokenMetadata)
+      const tokenMetadata = await fetch(tokenMetadataURI)
+        .then((response) => response.json())
+        .then((data) => data);
+      console.log(tokenMetadata);
+      metaArray.push(tokenMetadata);
+      console.log(metaArray);
     }
+    setMetaData(metaArray);
   };
 
-  const connectToWallet = () => {
-    if (typeof window.ethereum !== "undefined") {
-      window.ethereum.request({ method: "eth_requestAccounts" }).then((res) => {
-        setAddress(res[0]);
-      });
-    }
-  };
+  useEffect(() => {
+    console.log(metaData);
+  }, [metaData]);
 
   return (
     <>
-      <p>Heloo</p>
-      <div>
+      <div
+        style={{
+          textAlign: "center"
+        }}
+      >
         <h1 style={{ textAlign: "center" }}>IMPORT NFTS</h1>
         <button onClick={load}>Connect</button>
-        <div>{address}</div>
-        <button onClick={getNfts}>Get NFTs</button>
-        <div>Name: {metaData["name"]}</div>
-        <div>Image: {metaData["image"]}</div>
-        <div>Description: {metaData["description"]}</div>
-        <img src={metaData["image"]} alt="" />
+        <h2 style={{ marginBottom: "30px" }}>{address}</h2>
+        <button onClick={getNfts} style={{ marginBottom: "30px" }}>
+          Get NFTs
+        </button>
+        <div>
+          {metaData.length ? (
+            metaData.map((meta, ix) => {
+              return (
+                <div key={ix}>
+                  <div>Name: {meta.name}</div>
+                  <div>Image: {meta.image}</div>
+                  <div>Description: {meta.description}</div>
+                  <img
+                    src={meta.image}
+                    alt=""
+                    style={{ height: "200px", width: "200px" }}
+                  />
+                </div>
+              );
+            })
+          ) : (
+            <div>Loading ... </div>
+          )}
+        </div>
       </div>
     </>
   );
