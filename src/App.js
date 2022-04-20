@@ -5,13 +5,47 @@ import testAbi from "./testAbi";
 function App() {
   const [address, setAddress] = useState("");
   const [metaData, setMetaData] = useState([]);
+  const [walletMeta, setWalletMeta] = useState([]);
 
   async function load() {
     const web3 = new Web3(Web3.givenProvider);
     const accounts = await web3.eth.requestAccounts();
-
     setAddress(accounts[0]);
   }
+
+  const getNftsByWallet = async () => {
+    const walletAddress = "0x91e1543bf18cc3c7a25e682f9c20cf8bd6f28548";
+    const api = `https://api.rarible.org/v0.1/items/byOwner?owner=ETHEREUM:${walletAddress}&size=10`;
+    const items = await fetch(api)
+      .then((res) => res.json())
+      .then((res) => res.items);
+    console.log(items);
+
+    // const meta = await extractMetaData(items)
+    // console.log(meta)
+    setMetaData(items);
+    setWalletMeta([]);
+  };
+
+  // const extractMetaData = async (items) => {
+  //   const metaArray = [];
+  //   // items.map(async (item) => {
+  //   //   const metaData = await fetch(
+  //   //     `https://ethereum-api.rarible.org/v0.1/nft/items/${item.id}`
+  //   //   ).then((res) => res.json());
+  //   //   metaArray.push(metaData.meta);
+  //   // });
+
+  //   for(let i=0; i<items.length; i++){
+  //     const metaData = await fetch(
+  //       `https://ethereum-api.rarible.org/v0.1/nft/items/${items[i].id}`
+  //     ).then((res) => res.json());
+  //     metaData.meta && metaArray.push(metaData.meta);
+  //   }
+
+  //   console.log(metaArray);
+  //   return metaArray
+  // }
 
   const getNfts = async () => {
     const web3 = new Web3(window.ethereum);
@@ -45,18 +79,15 @@ function App() {
       metaArray.push(tokenMetadata);
       console.log(metaArray);
     }
-    setMetaData(metaArray);
+    setMetaData([]);
+    setWalletMeta(metaArray);
   };
-
-  useEffect(() => {
-    console.log(metaData);
-  }, [metaData]);
 
   return (
     <>
       <div
         style={{
-          textAlign: "center"
+          textAlign: "center",
         }}
       >
         <h1 style={{ textAlign: "center" }}>IMPORT NFTS</h1>
@@ -65,13 +96,33 @@ function App() {
         <button onClick={getNfts} style={{ marginBottom: "30px" }}>
           Get NFTs
         </button>
+        <button onClick={getNftsByWallet} style={{ marginBottom: "30px" }}>
+          Get NFTs By Wallet
+        </button>
         <div>
           {metaData.length ? (
             metaData.map((meta, ix) => {
+              console.log("Hello: " + meta);
+              return (
+                <div key={ix}>
+                  <div>Name: {meta.meta.name}</div>
+                  {/* <div>Image: {meta.image.url.PREVIEW}</div> */}
+                  <div>Description: {meta.meta.description}</div>
+                  <img
+                    src={meta.meta.content[0].url}
+                    alt=""
+                    style={{ height: "200px", width: "200px" }}
+                  />
+                </div>
+              );
+            })
+          ) : walletMeta.length ? (
+            walletMeta.map((meta, ix) => {
+              console.log("Hello: " + meta);
               return (
                 <div key={ix}>
                   <div>Name: {meta.name}</div>
-                  <div>Image: {meta.image}</div>
+                  {/* <div>Image: {meta.image.url.PREVIEW}</div> */}
                   <div>Description: {meta.description}</div>
                   <img
                     src={meta.image}
