@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import Web3 from "web3";
 import testAbi from "./testAbi";
+import algosdk from "algosdk";
 
 function App() {
   const [address, setAddress] = useState("");
   const [metaData, setMetaData] = useState([]);
   const [walletMeta, setWalletMeta] = useState([]);
+  const [algoState, setAlgoState] = useState([])
 
   async function load() {
     const web3 = new Web3(Web3.givenProvider);
@@ -13,12 +15,33 @@ function App() {
     setAddress(accounts[0]);
   }
 
+  const getAlgoNfts = async () => {
+    const addr = "3HEERVIOYPNGGRMDQR4GGEDNXOM37RUR5U5DHALB7YTGKLMEPXZTXWGK5Q"
+    const ixAddress = `https://algoindexer.algoexplorerapi.io/v2/accounts/${addr}`;
+    // const indexerClient = new algosdk.Indexer("",ixAddress);
+    // let accountInfo = await indexerClient
+    //   .lookupAccountByID(
+    //     "3HEERVIOYPNGGRMDQR4GGEDNXOM37RUR5U5DHALB7YTGKLMEPXZTXWGK5Q"
+    //   )
+    //   .do();
+    // console.log(
+    //   "Information for Account: " + JSON.stringify(accountInfo, undefined, 2)
+    // );
+    const resp = await fetch(ixAddress).then(res => res.json())
+    setAlgoState(resp.account["created-assets"])
+    setWalletMeta([]);
+    setMetaData([]);
+    console.log(resp);
+  }
+
   const getNftsByWallet = async () => {
     const walletAddress = "0x91e1543bf18cc3c7a25e682f9c20cf8bd6f28548";
-    const api = `https://api.rarible.org/v0.1/items/byOwner?owner=ETHEREUM:${walletAddress}&size=10`;
+    const teszosAddr = "tz1PoudzaVvSh8QAMLUwP7mCEwNPTC7VthaZ";
+    const api = `https://api.rarible.org/v0.1/items/byOwner?owner=TEZOS:${teszosAddr}`;
+    console.log("Called");
     const items = await fetch(api)
       .then((res) => res.json())
-      .then((res) => res.items);
+      .then((res) => res.items).catch(err => console.log(err));
     console.log(items);
 
     // const meta = await extractMetaData(items)
@@ -99,6 +122,9 @@ function App() {
         <button onClick={getNftsByWallet} style={{ marginBottom: "30px" }}>
           Get NFTs By Wallet
         </button>
+        <button onClick={getAlgoNfts} style={{ marginBottom: "30px" }}>
+          Get Algorand Assets
+        </button>
         <div>
           {metaData.length ? (
             metaData.map((meta, ix) => {
@@ -132,7 +158,12 @@ function App() {
                 </div>
               );
             })
-          ) : (
+          ) : algoState.length ? algoState.map(algo => {
+            return <div>
+              <p>{algo.params.name}</p>
+              <p>{algo.params.url}</p>
+            </div>
+          }) : (
             <div>Loading ... </div>
           )}
         </div>
